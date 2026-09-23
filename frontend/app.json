@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "ERP Modular",
+    "slug": "erp-modular",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "platforms": ["android", "web"],
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

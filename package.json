@@ -1,0 +1,14 @@
+{
+  "name": "erp-modular",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ERP modular con React Native Web, Express y MongoDB",
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "install:all": "npm install --workspaces",
+    "dev:backend": "npm --workspace backend run dev",
+    "start:backend": "npm --workspace backend start",
+    "dev:frontend": "npm --workspace frontend run web",
+    "test:backend": "npm --workspace backend test"
+  }
+}
