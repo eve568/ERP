@@ -17,10 +17,7 @@ services:
       - key: JWT_EXPIRES_IN
         value: 15m
       - key: CORS_ORIGIN
-        fromService:
-          name: erp-frontend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
+        sync: false
 
   - type: web
     name: erp-frontend
