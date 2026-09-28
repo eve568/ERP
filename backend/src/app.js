@@ -19,21 +19,49 @@ import insightsRoutes from './routes/insights.routes.js';
 import partnerRoutes from './routes/partner.routes.js';
 import { auditMutations } from './middleware/audit.js';
 
+function configureCors() {
+  return cors({
+    origin(origin, callback) {
+      if (!origin || env.corsOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(null, false);
+    }
+  });
+}
+
 export function createApp() {
   const app = express();
 
   app.disable('x-powered-by');
+  app.set('trust proxy', 1);
   app.use(helmet());
-  app.use(cors({ origin: env.corsOrigins }));
+  app.use(configureCors());
   app.use(express.json({ limit: '1mb' }));
   app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
-  app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 100 }));
-  app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: true, legacyHeaders: false }));
+  app.use(rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 100,
+    standardHeaders: true,
+    legacyHeaders: false
+  }));
+  app.use('/api/auth', rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 20,
+    standardHeaders: true,
+    legacyHeaders: false
+  }));
   app.use(auditMutations);
 
   app.get('/', (request, response) => {
-    response.json({ success: true, data: { service: 'erp-backend' }, message: 'API ERP activa' });
+    response.json({
+      success: true,
+      data: { service: 'erp-backend' },
+      message: 'API ERP activa'
+    });
   });
+
   app.use('/api/health', healthRoutes);
   app.use('/api/auth', authRoutes);
   app.use('/api/companies', companyRoutes);
