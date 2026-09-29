@@ -17,6 +17,15 @@ test('GET /api/health devuelve una respuesta consistente', async () => {
   assert.equal(body.data.status, 'ok');
 });
 
+test('GET /api/health/ready devuelve 503 cuando MongoDB no está conectado', async () => {
+  const response = await fetch(`${baseUrl}/api/health/ready`);
+  const body = await response.json();
+
+  assert.equal(response.status, 503);
+  assert.equal(body.success, false);
+  assert.equal(body.data.status, 'not_ready');
+});
+
 test('GET /ruta-inexistente devuelve 404 seguro', async () => {
   const response = await fetch(`${baseUrl}/ruta-inexistente`);
   const body = await response.json();
