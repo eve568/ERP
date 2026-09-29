@@ -6,8 +6,7 @@
     "orientation": "portrait",
     "platforms": ["android", "web"],
     "web": {
-      "bundler": "metro",
-      "output": "static"
+      "bundler": "metro"
     }
   }
 }
