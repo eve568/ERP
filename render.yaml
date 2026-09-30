@@ -18,16 +18,3 @@ services:
         value: 15m
       - key: CORS_ORIGIN
         sync: false
-
-  - type: web
-    name: erp-frontend
-    runtime: static
-    rootDir: frontend
-    buildCommand: npm install && npm run build:web
-    staticPublishPath: dist
-    envVars:
-      - key: EXPO_PUBLIC_API_URL
-        fromService:
-          name: erp-backend
-          type: web
-          envVarKey: RENDER_EXTERNAL_URL
