@@ -12,7 +12,6 @@ import {
 
 import { getHealth } from './src/services/api';
 import BrandLogo from './src/components/BrandLogo';
-import LoginScreen from './src/screens/LoginScreen';
 
 import {
   colors,
@@ -85,16 +84,11 @@ const stats = [
 ];
 
 export default function App() {
-  const [session, setSession] = useState(null);
   const [health, setHealth] = useState(null);
   const [error, setError] = useState(null);
   const [selectedModule, setSelectedModule] = useState('dashboard');
 
   useEffect(() => {
-    if (!session) {
-      return;
-    }
-
     getHealth()
       .then((payload) => {
         setHealth(payload.data);
@@ -103,35 +97,11 @@ export default function App() {
       .catch((requestError) => {
         setError(requestError.message);
       });
-  }, [session]);
-
-  if (!session) {
-    return (
-      <LoginScreen
-        onLoginSuccess={(loginData) => {
-          setSession(loginData);
-        }}
-      />
-    );
-  }
+  }, []);
 
   const activeModule = modules.find(
     (module) => module.key === selectedModule
   );
-
-  const currentUser = session?.user;
-
-  const userName =
-    [currentUser?.firstName, currentUser?.lastName]
-      .filter(Boolean)
-      .join(' ') || 'Usuario';
-
-  const userInitial =
-    currentUser?.firstName?.charAt(0)?.toUpperCase() ||
-    currentUser?.email?.charAt(0)?.toUpperCase() ||
-    'U';
-
-  const userRole = currentUser?.role || 'Usuario';
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -208,9 +178,7 @@ export default function App() {
 
           <View style={styles.sidebarFooter}>
             <Text style={styles.footerTitle}>ERP MODULAR</Text>
-            <Text style={styles.footerText}>
-              Sistema empresarial
-            </Text>
+            <Text style={styles.footerText}>Sistema empresarial</Text>
           </View>
         </View>
 
@@ -241,19 +209,12 @@ export default function App() {
 
               <View style={styles.userBadge}>
                 <View style={styles.userAvatar}>
-                  <Text style={styles.userAvatarText}>
-                    {userInitial}
-                  </Text>
+                  <Text style={styles.userAvatarText}>U</Text>
                 </View>
 
                 <View>
-                  <Text style={styles.userName}>
-                    {userName}
-                  </Text>
-
-                  <Text style={styles.userRole}>
-                    {userRole}
-                  </Text>
+                  <Text style={styles.userName}>Usuario</Text>
+                  <Text style={styles.userRole}>Administrador</Text>
                 </View>
               </View>
             </View>
