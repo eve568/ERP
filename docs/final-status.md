@@ -29,7 +29,7 @@ La arquitectura backend, los módulos operativos principales y la base frontend 
 
 ## Validación local
 
-- Suite backend: **38 pruebas aprobadas, 0 fallos**.
+- Suite backend: **67 pruebas aprobadas, 0 fallos** en la última verificación de Compras.
 - Diagnóstico frontend sin errores en los archivos modificados.
 - Expo Web compilado y servido localmente en `http://localhost:8081`.
 - API disponible localmente en `http://localhost:4000`.
@@ -40,7 +40,7 @@ La arquitectura backend, los módulos operativos principales y la base frontend 
 2. Ejecutar pruebas de integración con datos ficticios persistidos.
 3. Completar recuperación de contraseña mediante proveedor de correo.
 4. Implementar refresh tokens y revocación server-side.
-5. Completar CRUD visual de cada módulo en React Native/Web.
+5. Completar las pantallas operativas restantes en React Native/Web; clientes, proveedores, productos, inventario, ventas y compras cuentan con pantallas conectadas a la API.
 6. Añadir generación/exportación de reportes.
 7. Añadir notificaciones por correo y push.
 8. Revisar vulnerabilidades npm y fijar versiones Expo compatibles.
@@ -51,5 +51,5 @@ La arquitectura backend, los módulos operativos principales y la base frontend 
 
 - Configurar MongoDB Atlas y ejecutar seed de prueba.
 - Crear contexto de autenticación en frontend.
-- Construir navegación protegida y pantallas de clientes, productos, inventario y ventas.
-- Ejecutar pruebas end-to-end del flujo login -> venta -> inventario -> auditoría.
+- Ejecutar pruebas end-to-end con MongoDB real de login -> ventas/compras -> inventario -> auditoría.
+- Definir cuentas por pagar, pagos parciales, aplicación de crédito y cancelación con reversa de inventario antes de integrar esos flujos.

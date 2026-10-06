@@ -10,6 +10,7 @@ const saleLineSchema = new mongoose.Schema({
 const saleSchema = new mongoose.Schema({
   companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', required: true, index: true },
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
+  warehouseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Warehouse' },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   items: { type: [saleLineSchema], required: true, validate: (items) => items.length > 0 },
   subtotal: { type: Number, required: true, min: 0 },

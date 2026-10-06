@@ -13,7 +13,13 @@ const customerSchema = new mongoose.Schema({
   status: { type: String, enum: ['ACTIVE', 'INACTIVE'], default: 'ACTIVE', required: true }
 }, { timestamps: true, versionKey: false });
 
-customerSchema.index({ companyId: 1, taxId: 1 }, { unique: true, sparse: true });
+customerSchema.index(
+  { companyId: 1, taxId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { taxId: { $type: 'string', $gt: '' } }
+  }
+);
 customerSchema.index({ companyId: 1, name: 1 });
 
 export const Customer = mongoose.models.Customer ?? mongoose.model('Customer', customerSchema);

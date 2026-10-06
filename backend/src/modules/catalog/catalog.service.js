@@ -105,7 +105,17 @@ export async function updateProduct(id, changes, user) {
   ensureObjectId(id, 'id');
   const product = await Product.findById(id).lean();
   if (!product) throw new AppError('Producto no encontrado', 404);
-  const companyId = companyFor(user, product.companyId.toString());
+  if (user.role === 'ADMIN' && !changes.companyId) {
+    throw new AppError('companyId es obligatorio', 400);
+  }
+  const requestedCompanyId = changes.companyId ?? product.companyId.toString();
+  const companyId = companyFor(user, requestedCompanyId);
+  if (product.companyId.toString() !== String(companyId)) {
+    throw new AppError('No tienes acceso a este producto', 403);
+  }
+  if (changes.companyId && String(changes.companyId) !== String(companyId)) {
+    throw new AppError('No puedes cambiar la empresa del producto', 400);
+  }
   if (changes.categoryId || changes.supplierId) await ensureReferences(companyId, { ...product, ...changes });
   try {
     return await Product.findOneAndUpdate({ _id: id, companyId }, { ...changes, companyId }, { new: true, runValidators: true }).lean();

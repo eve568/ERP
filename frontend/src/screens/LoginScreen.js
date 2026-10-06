@@ -13,9 +13,9 @@ import {
 
 import BrandLogo from '../components/BrandLogo';
 import { login } from '../services/auth';
-import { colors } from '../theme/colors';
+import { colors } from '../theme';
 
-export default function LoginScreen({ onLoginSuccess }) {
+export default function LoginScreen({ onLoginSuccess, notice = null }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -71,6 +71,12 @@ export default function LoginScreen({ onLoginSuccess }) {
           <Text style={styles.subtitle}>
             Inicia sesión para acceder a tu ERP.
           </Text>
+
+          {notice ? (
+            <View style={styles.noticeBox}>
+              <Text style={styles.noticeText}>{notice}</Text>
+            </View>
+          ) : null}
 
           <View style={styles.form}>
             <View style={styles.field}>
@@ -200,6 +206,23 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: 'center',
     marginBottom: 28,
+  },
+
+  noticeBox: {
+    backgroundColor: colors.pastelGreen,
+    borderWidth: 1,
+    borderColor: colors.secondary,
+    borderRadius: 12,
+    padding: 12,
+    marginTop: -14,
+    marginBottom: 18,
+  },
+
+  noticeText: {
+    color: colors.secondaryDark,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
   },
 
   form: {

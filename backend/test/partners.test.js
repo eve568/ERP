@@ -41,5 +41,13 @@ test('Crear cliente no simula persistencia sin MongoDB', async () => {
 
 test('Los modelos de clientes y proveedores tienen índices por empresa', () => {
   assert.equal(Customer.schema.indexes().some(([fields]) => fields.companyId === 1 && fields.name === 1), true);
-  assert.equal(Supplier.schema.indexes().some(([fields]) => fields.companyId === 1 && fields.taxId === 1), true);
+  for (const Model of [Customer, Supplier]) {
+    const taxIdIndex = Model.schema.indexes().find(
+      ([fields]) => fields.companyId === 1 && fields.taxId === 1
+    );
+    assert.equal(taxIdIndex[1].unique, true);
+    assert.deepEqual(taxIdIndex[1].partialFilterExpression, {
+      taxId: { $type: 'string', $gt: '' }
+    });
+  }
 });

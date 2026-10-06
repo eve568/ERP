@@ -10,6 +10,7 @@ const purchaseLineSchema = new mongoose.Schema({
 const purchaseSchema = new mongoose.Schema({
   companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', required: true, index: true },
   supplierId: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier', required: true },
+  warehouseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Warehouse' },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   items: { type: [purchaseLineSchema], required: true, validate: (items) => items.length > 0 },
   subtotal: { type: Number, required: true, min: 0 },

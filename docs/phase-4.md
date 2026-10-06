@@ -15,6 +15,8 @@
 - Rutas protegidas con Bearer JWT.
 - `companyId` y `branchId` incorporados al JWT de sesión.
 - Aislamiento backend: usuarios no administradores solo acceden a su empresa.
+- La sesión conserva `activeCompanyId` para ADMIN y permite seleccionar una empresa activa desde el dashboard.
+- El cliente añade automáticamente el `companyId` activo a consultas y escrituras de recursos empresariales; usuarios normales usan el `companyId` del usuario autenticado.
 - `ADMIN` administra empresas; `ADMIN` y `GERENTE` administran sucursales.
 - Desactivación preparada mediante actualización de `status`.
 
