@@ -38,3 +38,35 @@ test('Los permisos se validan en backend por rol', () => {
   assert.equal(roleHasPermission('FINANZAS', 'EXPORT'), true);
   assert.equal(roleHasPermission('VENTAS', 'DELETE'), false);
 });
+
+test('EMPLEADO no puede crear productos, clientes ni registros financieros', async () => {
+  const token = tokenFor('EMPLEADO');
+  const requests = [
+    fetch(`${baseUrl}/api/products`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      body: JSON.stringify({})
+    }),
+    fetch(`${baseUrl}/api/customers`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      body: JSON.stringify({})
+    }),
+    fetch(`${baseUrl}/api/finance/incomes`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      body: JSON.stringify({})
+    })
+  ];
+
+  const responses = await Promise.all(requests);
+  assert.deepEqual(responses.map((response) => response.status), [403, 403, 403]);
+});
+
+test('EMPLEADO no puede exportar reportes', async () => {
+  const response = await fetch(`${baseUrl}/api/reports/sales`, {
+    headers: { authorization: `Bearer ${tokenFor('EMPLEADO')}` }
+  });
+
+  assert.equal(response.status, 403);
+});
