@@ -23,4 +23,13 @@ export const colors = {
   pastelYellow: '#FFF4DF',
   pastelLavender: '#F0EAFF',
   pastelPink: '#FDECEF',
+
+  // Superficie oscura (paneles de marca / placeholder de módulo)
+  panelBackground: '#25313B',
+  panelText: '#D9E4E8',
+  panelBorder: '#40505A',
+  panelMuted: '#9DAEB6',
+
+  // Fondo de modales y menús flotantes
+  overlay: 'rgba(37, 49, 59, 0.45)',
 };

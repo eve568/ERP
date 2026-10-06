@@ -41,6 +41,10 @@ Copy-Item .env.example .env
 Completa `MONGODB_URI` en `.env`. La URI de ejemplo no intenta conectarse y permite iniciar la API para validar la arquitectura.
 Para autenticación, define también `JWT_SECRET` con un valor largo y aleatorio. `JWT_EXPIRES_IN` controla la duración del token y usa `15m` por defecto.
 
+### Aprovisionamiento inicial de empresa y administrador
+
+Para una instalación nueva, inicia el backend una sola vez con `MONGODB_URI` configurada y proporciona temporalmente estas variables al comando manual `npm run bootstrap:admin`: `BOOTSTRAP_COMPANY_NAME`, `BOOTSTRAP_COMPANY_LEGAL_NAME`, `BOOTSTRAP_COMPANY_TAX_ID`, `BOOTSTRAP_ADMIN_FIRST_NAME`, `BOOTSTRAP_ADMIN_LAST_NAME`, `BOOTSTRAP_ADMIN_EMAIL` y `BOOTSTRAP_ADMIN_PASSWORD`. El script crea empresa y administrador dentro de una transacción y se detiene si ya existe una empresa, un administrador o la marca de bootstrap. La base MongoDB debe admitir transacciones (replica set o clúster sharded); si no las admite, el proceso aborta sin alternativa no transaccional. No guardes estas variables en archivos versionados ni compartas la contraseña en logs.
+
 ## Ejecución
 
 Backend:

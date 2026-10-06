@@ -8,6 +8,7 @@
     "install:all": "npm install --workspaces",
     "dev:backend": "npm --workspace backend run dev",
     "start:backend": "npm --workspace backend start",
+    "bootstrap:admin": "npm --workspace backend run bootstrap:admin",
     "dev:frontend": "npm --workspace frontend run web",
     "build:web": "npm --workspace frontend run build:web",
     "test:backend": "npm --workspace backend test"

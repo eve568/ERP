@@ -83,6 +83,7 @@ const quickActions = [
   {
     key: 'customer',
     action: 'customer',
+    module: 'people',
     title: 'Nuevo cliente',
     description: 'Registrar un cliente de la empresa',
     icon: '+',
@@ -90,6 +91,7 @@ const quickActions = [
   {
     key: 'sale',
     action: 'sale',
+    module: 'sales',
     title: 'Nueva venta',
     description: 'Crear una venta en borrador',
     icon: '+',
@@ -97,6 +99,7 @@ const quickActions = [
   {
     key: 'product',
     action: 'product',
+    module: 'inventory',
     title: 'Nuevo producto',
     description: 'Agregar un producto al catálogo',
     icon: '+',
@@ -104,6 +107,7 @@ const quickActions = [
   {
     key: 'movement',
     action: 'movement',
+    module: 'inventory',
     title: 'Movimiento',
     description: 'Registrar entrada o salida de inventario',
     icon: '+',
@@ -469,8 +473,9 @@ export default function DashboardScreen({
   }, []);
 
   const openDialog = useCallback((action) => {
+    handleModuleSelect(action.module);
     setDialog({ action, visible: true, seq: Date.now() });
-  }, []);
+  }, [handleModuleSelect]);
 
   const closeDialog = useCallback(() => {
     setDialog((current) => ({ ...current, visible: false }));

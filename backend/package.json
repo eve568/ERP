@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
+    "bootstrap:admin": "node scripts/bootstrap-admin.js",
     "test": "node --test"
   },
   "dependencies": {
