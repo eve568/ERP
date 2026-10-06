@@ -72,9 +72,20 @@ export async function loginUser({ email, password }) {
     throw new AppError('Credenciales inválidas', 401);
   }
 
+  // Permite iniciar sesión sin empresa durante la configuración inicial.
+  // Si existe exactamente una empresa activa, se asigna automáticamente;
+  // si no existe ninguna o hay varias, el usuario conserva companyId = null.
   if (user.role !== 'ADMIN' && !user.companyId) {
-    user.companyId = await resolveAutomaticCompanyId();
-    await user.save();
+    const companies = await Company.find({ status: 'ACTIVE' })
+      .sort({ createdAt: 1, _id: 1 })
+      .select('_id')
+      .limit(2)
+      .lean();
+
+    if (companies.length === 1) {
+      user.companyId = companies[0]._id;
+      await user.save();
+    }
   }
 
   const token = jwt.sign({
