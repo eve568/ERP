@@ -3,7 +3,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { authorizePermission, authorizeRoles } from '../middleware/authorize.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { requireFields } from '../utils/validation.js';
-import { changePassword, loginUser, registerUser } from '../modules/auth/auth.service.js';
+import { changePassword, getCurrentUser, loginUser, registerUser } from '../modules/auth/auth.service.js';
 import { sendSuccess } from '../utils/response.js';
 
 const router = Router();
@@ -29,7 +29,9 @@ router.post('/change-password', requireAuth, asyncHandler(async (request, respon
   return sendSuccess(response, null, 'Contraseña actualizada correctamente');
 }));
 
-router.get('/me', requireAuth, (request, response) => sendSuccess(response, { user: request.user }, 'Sesión válida'));
+router.get('/me', requireAuth, asyncHandler(async (request, response) => (
+  sendSuccess(response, { user: await getCurrentUser(request.user.sub) }, 'Sesión válida')
+)));
 router.get('/admin-check', requireAuth, authorizeRoles('ADMIN'), (request, response) => (
   sendSuccess(response, { authorized: true }, 'Acceso administrativo autorizado')
 ));
