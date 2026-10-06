@@ -144,7 +144,6 @@ export async function loginUser({ email, password }) {
       $setOnInsert: {
         companyId,
         name: 'Pruebas',
-        branchId: branch._id,
         address: 'Almacén automático para pruebas'
       },
       $set: {
