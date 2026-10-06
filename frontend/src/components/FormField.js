@@ -13,6 +13,7 @@ export default function FormField({
   keyboardType,
   autoCapitalize = 'sentences',
   autoCorrect = true,
+  maxLength,
   editable = true,
   error = null,
   hint = null,
@@ -34,6 +35,7 @@ export default function FormField({
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
         autoCorrect={autoCorrect}
+        maxLength={maxLength}
         editable={editable}
         style={[styles.input, error ? styles.inputError : null]}
       />

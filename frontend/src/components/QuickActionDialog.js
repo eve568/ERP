@@ -2,6 +2,7 @@ import AppModal from './AppModal';
 import CustomerForm from './forms/CustomerForm';
 import MovementForm from './forms/MovementForm';
 import ProductForm from './forms/ProductForm';
+import PurchaseForm from './forms/PurchaseForm';
 import SaleForm from './forms/SaleForm';
 
 const forms = {
@@ -9,13 +10,15 @@ const forms = {
   product: ProductForm,
   movement: MovementForm,
   sale: SaleForm,
+  purchase: PurchaseForm,
 };
 
 const subtitles = {
   customer: 'Registro rápido de un cliente en la empresa actual.',
   product: 'Alta de un producto en el catálogo de la empresa.',
-  movement: 'Entrada o salida de existencias en un almacén.',
-  sale: 'Venta con uno o varios productos; se guarda como borrador.',
+  movement: 'Entrada, salida o ajuste de existencias en un almacén.',
+  sale: 'Venta con productos disponibles confirmada contra el almacén elegido.',
+  purchase: 'Compra recibida con actualización de existencias del almacén.',
 };
 
 /**
@@ -27,6 +30,8 @@ export default function QuickActionDialog({
   visible = true,
   token,
   companyId,
+  branchId,
+  userRole,
   onClose,
   onDone,
   onSessionExpired,
@@ -52,6 +57,8 @@ export default function QuickActionDialog({
       <Form
         token={token}
         companyId={companyId}
+        branchId={branchId}
+        userRole={userRole}
         onCancel={onClose}
         onDone={onDone}
         onSessionExpired={onSessionExpired}

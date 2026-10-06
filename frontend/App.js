@@ -57,6 +57,14 @@ export default function App() {
     setNotice(null);
   }, []);
 
+  const handleActiveCompanyChange = useCallback((companyId) => {
+    if (session?.user?.role !== 'ADMIN') return;
+
+    const updatedSession = { ...session, activeCompanyId: companyId };
+    saveSession(updatedSession);
+    setSession(updatedSession);
+  }, [session]);
+
   const handleLogout = useCallback(async () => {
     await logout(session?.token);
     clearSession();
@@ -91,6 +99,8 @@ export default function App() {
       <View style={styles.app}>
         <DashboardScreen
           session={session}
+          activeCompanyId={session.activeCompanyId ?? null}
+          onActiveCompanyChange={handleActiveCompanyChange}
           health={health}
           healthStatus={healthStatus}
           healthError={healthError}

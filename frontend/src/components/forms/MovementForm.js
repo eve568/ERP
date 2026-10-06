@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import AppButton from '../AppButton';
 import FormActions from '../FormActions';
 import FormField from '../FormField';
 import PickerField from '../PickerField';
@@ -9,21 +10,33 @@ import { createInventoryMovement } from '../../services/records';
 import { colors, radius, spacing, typography } from '../../theme';
 
 const movementTypes = [
-  { value: 'PURCHASE', label: 'Entrada por compra' },
-  { value: 'SALE', label: 'Salida por venta' },
-  { value: 'ADJUSTMENT', label: 'Ajuste de inventario' },
-  { value: 'RETURN', label: 'Devolución' },
-  { value: 'TRANSFER', label: 'Transferencia' },
+  { value: 'PURCHASE', label: 'Entrada (PURCHASE)' },
+  { value: 'SALE', label: 'Salida (SALE)' },
+  { value: 'ADJUSTMENT', label: 'Ajuste (ADJUSTMENT)' },
 ];
 
-export default function MovementForm({ token, companyId, onCancel, onDone, onSessionExpired }) {
+const adjustmentDirections = [
+  { value: 'INCREASE', label: 'Aumentar existencia' },
+  { value: 'DECREASE', label: 'Disminuir existencia' },
+];
+
+export default function MovementForm({
+  token,
+  companyId,
+  branchId,
+  onCancel,
+  onDone,
+  onSessionExpired,
+}) {
   const [products, setProducts] = useState({ status: 'loading', items: [], pages: 1 });
   const [warehouses, setWarehouses] = useState({ status: 'loading', items: [] });
   const [productId, setProductId] = useState(null);
   const [warehouseId, setWarehouseId] = useState(null);
   const [type, setType] = useState('ADJUSTMENT');
+  const [adjustmentDirection, setAdjustmentDirection] = useState('INCREASE');
   const [quantity, setQuantity] = useState('');
   const [reason, setReason] = useState('');
+  const [referenceId, setReferenceId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
@@ -33,8 +46,11 @@ export default function MovementForm({ token, companyId, onCancel, onDone, onSes
 
     try {
       const [productsPayload, warehousesPayload] = await Promise.all([
-        listProducts(token, companyId),
-        listWarehouses(token, companyId),
+        listProducts(token, companyId, { limit: 100, status: 'ACTIVE' }),
+        listWarehouses(token, companyId, {
+          status: 'ACTIVE',
+          branchId: branchId || undefined,
+        }),
       ]);
 
       const productItems = Array.isArray(productsPayload?.data?.items)
@@ -60,7 +76,7 @@ export default function MovementForm({ token, companyId, onCancel, onDone, onSes
       setWarehouses((current) => ({ ...current, status: 'error' }));
       setError(requestError?.message ?? 'No fue posible cargar productos o almacenes.');
     }
-  }, [token, companyId, onSessionExpired]);
+  }, [token, companyId, branchId, onSessionExpired]);
 
   useEffect(() => {
     loadReferences();
@@ -93,6 +109,14 @@ export default function MovementForm({ token, companyId, onCancel, onDone, onSes
       setError('La cantidad debe ser un número mayor a 0.');
       return;
     }
+    if (reason.trim().length > 300) {
+      setError('El motivo no puede exceder 300 caracteres.');
+      return;
+    }
+    if (referenceId.trim() && !/^[a-f\d]{24}$/i.test(referenceId.trim())) {
+      setError('La referencia debe ser un ObjectId válido.');
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
@@ -101,10 +125,14 @@ export default function MovementForm({ token, companyId, onCancel, onDone, onSes
       productId,
       warehouseId,
       type,
-      quantity: parsedQuantity,
+      quantity:
+        type === 'ADJUSTMENT' && adjustmentDirection === 'DECREASE'
+          ? -parsedQuantity
+          : parsedQuantity,
     };
 
     if (reason.trim()) payload.reason = reason.trim();
+    if (referenceId.trim()) payload.referenceId = referenceId.trim();
     if (companyId) payload.companyId = companyId;
 
     try {
@@ -125,8 +153,8 @@ export default function MovementForm({ token, companyId, onCancel, onDone, onSes
   return (
     <View style={styles.form}>
       <Text style={styles.sectionNote}>
-        Solo las salidas por venta descuentan existencia; las demás entradas
-        incrementan el inventario del almacén seleccionado.
+        Entrada y salida usan los tipos PURCHASE y SALE existentes. El ajuste
+        registra una diferencia firmada, no una existencia final.
       </Text>
 
       <PickerField
@@ -148,7 +176,7 @@ export default function MovementForm({ token, companyId, onCancel, onDone, onSes
         onChange={setWarehouseId}
         loading={warehouses.status === 'loading'}
         placeholder={hasWarehouses ? 'Seleccionar almacén' : 'Sin almacenes disponibles'}
-        emptyMessage="Aún no hay almacenes. Primero registra un almacén en el módulo Inventario (próximamente)."
+        emptyMessage="Aún no hay almacenes activos. Primero registra un almacén en el módulo Inventario."
         isRequired
       />
 
@@ -160,6 +188,16 @@ export default function MovementForm({ token, companyId, onCancel, onDone, onSes
         placeholder="Seleccionar tipo"
         isRequired
       />
+
+      {type === 'ADJUSTMENT' ? (
+        <PickerField
+          label="Dirección del ajuste"
+          value={adjustmentDirection}
+          options={adjustmentDirections}
+          onChange={setAdjustmentDirection}
+          isRequired
+        />
+      ) : null}
 
       <FormField
         label="Cantidad"
@@ -176,6 +214,18 @@ export default function MovementForm({ token, companyId, onCancel, onDone, onSes
         value={reason}
         onChangeText={setReason}
         placeholder="Opcional"
+        maxLength={300}
+        editable={!submitting}
+      />
+
+      <FormField
+        label="Referencia (ObjectId)"
+        value={referenceId}
+        onChangeText={setReferenceId}
+        placeholder="Opcional"
+        autoCapitalize="none"
+        autoCorrect={false}
+        maxLength={24}
         editable={!submitting}
       />
 

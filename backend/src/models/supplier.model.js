@@ -11,7 +11,13 @@ const supplierSchema = new mongoose.Schema({
   status: { type: String, enum: ['ACTIVE', 'INACTIVE'], default: 'ACTIVE', required: true }
 }, { timestamps: true, versionKey: false });
 
-supplierSchema.index({ companyId: 1, taxId: 1 }, { unique: true, sparse: true });
+supplierSchema.index(
+  { companyId: 1, taxId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { taxId: { $type: 'string', $gt: '' } }
+  }
+);
 supplierSchema.index({ companyId: 1, name: 1 });
 
 export const Supplier = mongoose.models.Supplier ?? mongoose.model('Supplier', supplierSchema);

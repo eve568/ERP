@@ -14,6 +14,12 @@ import AppSidebar from '../components/AppSidebar';
 import ConnectionStatus from '../components/ConnectionStatus';
 import EmptyBlock from '../components/EmptyBlock';
 import ModulePlaceholder from '../components/ModulePlaceholder';
+import PickerField from '../components/PickerField';
+import PartnerScreen from './PartnerScreen';
+import ProductScreen from './ProductScreen';
+import InventoryScreen from './InventoryScreen';
+import SalesScreen from './SalesScreen';
+import PurchasesScreen from './PurchasesScreen';
 import QuickActionCard from '../components/QuickActionCard';
 import QuickActionDialog from '../components/QuickActionDialog';
 import StatCard from '../components/StatCard';
@@ -24,7 +30,6 @@ import {
   isSessionError,
   listBranches,
   listCompanies,
-  listSales,
 } from '../services/api';
 import { colors, spacing, typography } from '../theme';
 import {
@@ -54,21 +59,35 @@ const modules = [
     label: 'Inventario',
     detail: 'Existencias y movimientos',
     icon: '□',
-    available: false,
+    available: true,
   },
   {
     key: 'purchases',
     label: 'Compras',
     detail: 'Proveedores y compras',
     icon: '↓',
-    available: false,
+    available: true,
   },
   {
-    key: 'people',
-    label: 'Personas',
-    detail: 'Clientes y colaboradores',
+    key: 'customers',
+    label: 'Clientes',
+    detail: 'Cartera de clientes',
     icon: '○',
-    available: false,
+    available: true,
+  },
+  {
+    key: 'products',
+    label: 'Productos',
+    detail: 'Catálogo de productos',
+    icon: '□',
+    available: true,
+  },
+  {
+    key: 'suppliers',
+    label: 'Proveedores',
+    detail: 'Directorio de proveedores',
+    icon: '◇',
+    available: true,
   },
   {
     key: 'finance',
@@ -83,7 +102,7 @@ const quickActions = [
   {
     key: 'customer',
     action: 'customer',
-    module: 'people',
+    module: 'customers',
     title: 'Nuevo cliente',
     description: 'Registrar un cliente de la empresa',
     icon: '+',
@@ -93,13 +112,13 @@ const quickActions = [
     action: 'sale',
     module: 'sales',
     title: 'Nueva venta',
-    description: 'Crear una venta en borrador',
+    description: 'Crear y confirmar una venta en el almacén seleccionado',
     icon: '+',
   },
   {
     key: 'product',
     action: 'product',
-    module: 'inventory',
+    module: 'products',
     title: 'Nuevo producto',
     description: 'Agregar un producto al catálogo',
     icon: '+',
@@ -109,7 +128,15 @@ const quickActions = [
     action: 'movement',
     module: 'inventory',
     title: 'Movimiento',
-    description: 'Registrar entrada o salida de inventario',
+    description: 'Registrar entrada, salida o ajuste de inventario',
+    icon: '+',
+  },
+  {
+    key: 'purchase',
+    action: 'purchase',
+    module: 'purchases',
+    title: 'Nueva compra',
+    description: 'Registrar compra y recibirla en un almacén',
     icon: '+',
   },
 ];
@@ -140,6 +167,8 @@ function SectionHeader({ title, subtitle }) {
 
 export default function DashboardScreen({
   session,
+  activeCompanyId,
+  onActiveCompanyChange,
   health,
   healthStatus,
   healthError,
@@ -160,14 +189,15 @@ export default function DashboardScreen({
     companyName: null,
     branchName: null,
   });
+  const [companies, setCompanies] = useState({
+    status: 'idle',
+    items: [],
+    error: null,
+  });
+  const [companyRefreshTick, setCompanyRefreshTick] = useState(0);
   const [dashboard, setDashboard] = useState({
     status: 'idle',
     data: null,
-    error: null,
-  });
-  const [sales, setSales] = useState({
-    status: 'idle',
-    items: [],
     error: null,
   });
   const [audit, setAudit] = useState({
@@ -221,16 +251,38 @@ export default function DashboardScreen({
       let companyId = user.companyId ?? null;
 
       if (companyId && typeof companyId === 'object') {
-        companyId = companyId._id ?? null;
+        companyId = companyId._id ?? companyId.id ?? null;
       }
 
-      if (!companyId) {
+      if (user.role === 'ADMIN') {
+        setCompanies({ status: 'loading', items: [], error: null });
+
         try {
           const payload = await listCompanies(token);
-          const companies = Array.isArray(payload?.data)
+          const companyItems = Array.isArray(payload?.data)
             ? payload.data
             : [];
-          companyId = companies[0]?._id ?? null;
+          const activeCompanies = companyItems.filter(
+            (company) => company.status === 'ACTIVE'
+          );
+
+          if (cancelled) return;
+
+          setCompanies({
+            status: activeCompanies.length ? 'ready' : 'empty',
+            items: activeCompanies,
+            error: null,
+          });
+
+          const preferredId = activeCompanyId ?? companyId;
+          const selectedCompany = activeCompanies.find(
+            (company) => company._id === preferredId
+          );
+          companyId = selectedCompany?._id ?? null;
+
+          if (activeCompanyId !== companyId) {
+            onActiveCompanyChange?.(companyId);
+          }
         } catch (requestError) {
           if (cancelled) return;
 
@@ -245,8 +297,17 @@ export default function DashboardScreen({
             companyName: null,
             branchName: null,
           });
+          setCompanies({
+            status: 'error',
+            items: [],
+            error:
+              requestError?.message ??
+              'No se pudieron cargar las empresas disponibles',
+          });
           return;
         }
+      } else {
+        setCompanies({ status: 'idle', items: [], error: null });
       }
 
       if (!companyId) {
@@ -300,7 +361,16 @@ export default function DashboardScreen({
     return () => {
       cancelled = true;
     };
-  }, [token, user.companyId, user.branchId, onSessionExpired]);
+  }, [
+    token,
+    user.role,
+    user.companyId,
+    user.branchId,
+    activeCompanyId,
+    onActiveCompanyChange,
+    onSessionExpired,
+    companyRefreshTick,
+  ]);
 
   /* Carga los indicadores y la actividad del dashboard. */
   useEffect(() => {
@@ -399,83 +469,25 @@ export default function DashboardScreen({
     };
   }, [token, context, refreshTick, onSessionExpired]);
 
-  /* Carga ventas al abrir el módulo. */
-  useEffect(() => {
-    if (!token || selectedModule !== 'sales') return undefined;
-
-    if (context.status !== 'ready') {
-      setSales({
-        status: context.status === 'loading' ? 'loading' : 'error',
-        items: [],
-        error:
-          context.status === 'loading'
-            ? null
-            : 'No se pudo resolver la empresa activa',
-      });
-      return undefined;
-    }
-
-    let cancelled = false;
-
-    async function loadSales() {
-      setSales((current) => ({
-        status: 'loading',
-        items: current.items,
-        error: null,
-      }));
-
-      try {
-        const payload = await listSales(token, context.companyId);
-
-        if (cancelled) return;
-
-        const items = Array.isArray(payload?.data) ? payload.data : [];
-
-        setSales({
-          status: items.length ? 'ready' : 'empty',
-          items,
-          error: null,
-        });
-      } catch (requestError) {
-        if (cancelled) return;
-
-        if (isSessionError(requestError)) {
-          onSessionExpired?.();
-          return;
-        }
-
-        setSales({
-          status: 'error',
-          items: [],
-          error:
-            requestError?.message ?? 'No se pudieron cargar las ventas',
-        });
-      }
-    }
-
-    loadSales();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    token,
-    selectedModule,
-    context.status,
-    context.companyId,
-    refreshTick,
-    onSessionExpired,
-  ]);
-
   const handleModuleSelect = useCallback((key) => {
     setSelectedModule(key);
     setSidebarOpen(false);
   }, []);
 
   const openDialog = useCallback((action) => {
+    if (!context.companyId) {
+      onToast?.(
+        user.role === 'ADMIN'
+          ? 'Selecciona una empresa activa antes de continuar.'
+          : 'Tu usuario no tiene una empresa asignada.',
+        'error'
+      );
+      return;
+    }
+
     handleModuleSelect(action.module);
     setDialog({ action, visible: true, seq: Date.now() });
-  }, [handleModuleSelect]);
+  }, [context.companyId, handleModuleSelect, onToast, user.role]);
 
   const closeDialog = useCallback(() => {
     setDialog((current) => ({ ...current, visible: false }));
@@ -603,6 +615,35 @@ export default function DashboardScreen({
               transform: [{ translateY: enterY }],
             }}
           >
+            {user.role === 'ADMIN' ? (
+              <View style={styles.companySelector}>
+                <PickerField
+                  label="Empresa activa"
+                  value={activeCompanyId ?? ''}
+                  options={companies.items.map((company) => ({
+                    label: company.name,
+                    value: company._id,
+                  }))}
+                  onChange={onActiveCompanyChange}
+                  placeholder="Selecciona una empresa"
+                  loading={companies.status === 'loading'}
+                  disabled={companies.status === 'error'}
+                  error={companies.status === 'error' ? companies.error : null}
+                  emptyMessage="No hay empresas activas disponibles."
+                />
+                {companies.status === 'error' ? (
+                  <Pressable
+                    onPress={() =>
+                      setCompanyRefreshTick((tick) => tick + 1)
+                    }
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.retryText}>Reintentar carga de empresas</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
+
             <View style={styles.greeting}>
               <Text style={styles.greetingTitle}>
                 {greetingForNow()}, {user.firstName ?? 'Usuario'}
@@ -631,8 +672,16 @@ export default function DashboardScreen({
 
                 {dashboard.status === 'empty' ? (
                   <EmptyBlock
-                    title="Sin empresa asignada"
-                    message="Esta sesión no tiene una empresa asociada, por lo que no hay indicadores que mostrar."
+                    title={
+                      user.role === 'ADMIN'
+                        ? 'Selecciona una empresa activa'
+                        : 'Sin empresa asignada'
+                    }
+                    message={
+                      user.role === 'ADMIN'
+                        ? 'Selecciona una empresa activa para consultar sus indicadores.'
+                        : 'Esta sesión no tiene una empresa asociada, por lo que no hay indicadores que mostrar.'
+                    }
                   />
                 ) : (
                   <View style={styles.statsGrid}>
@@ -724,59 +773,48 @@ export default function DashboardScreen({
                   />
                 )}
               </>
+            ) : selectedModule === 'customers' || selectedModule === 'suppliers' ? (
+              <PartnerScreen
+                key={selectedModule}
+                resource={selectedModule}
+                token={token}
+                companyId={context.companyId}
+                refreshKey={refreshTick}
+                onSessionExpired={onSessionExpired}
+                onToast={onToast}
+              />
+            ) : selectedModule === 'products' ? (
+              <ProductScreen
+                token={token}
+                companyId={context.companyId}
+                refreshKey={refreshTick}
+                onSessionExpired={onSessionExpired}
+                onToast={onToast}
+              />
+            ) : selectedModule === 'inventory' ? (
+              <InventoryScreen
+                token={token}
+                companyId={context.companyId}
+                branchId={user.branchId}
+                userRole={user.role}
+                refreshKey={refreshTick}
+                onSessionExpired={onSessionExpired}
+                onToast={onToast}
+              />
             ) : selectedModule === 'sales' ? (
-              <>
-                <SectionHeader
-                  title="Ventas"
-                  subtitle="Ventas registradas para la empresa activa"
-                />
-
-                {sales.status === 'loading' || sales.status === 'idle' ? (
-                  <View style={styles.recordCard}>
-                    <Text style={styles.recordMuted}>Cargando ventas...</Text>
-                  </View>
-                ) : sales.status === 'error' ? (
-                  <View style={styles.recordCard}>
-                    <Text style={styles.recordError}>{sales.error}</Text>
-                    <Pressable
-                      onPress={() => setRefreshTick((tick) => tick + 1)}
-                      accessibilityRole="button"
-                    >
-                      <Text style={styles.retryText}>Reintentar</Text>
-                    </Pressable>
-                  </View>
-                ) : sales.status === 'empty' ? (
-                  <EmptyBlock
-                    title="Sin ventas registradas"
-                    message="Cuando existan ventas para esta empresa, aparecerán aquí."
-                  />
-                ) : (
-                  <View style={styles.recordsList}>
-                    {sales.items.map((sale) => (
-                      <View key={sale._id} style={styles.recordCard}>
-                        <View style={styles.recordTop}>
-                          <Text style={styles.recordTitle}>
-                            {sale.customerId?.name ?? 'Cliente'}
-                          </Text>
-                          <Text style={styles.recordStatus}>
-                            {sale.status ?? 'Sin estado'}
-                          </Text>
-                        </View>
-
-                        <Text style={styles.recordMuted}>
-                          {sale.createdAt
-                            ? formatDate(new Date(sale.createdAt))
-                            : 'Fecha no disponible'}
-                        </Text>
-
-                        <Text style={styles.recordAmount}>
-                          {formatCurrency(sale.total)}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </>
+              <SalesScreen
+                token={token}
+                companyId={context.companyId}
+                refreshKey={refreshTick}
+                onSessionExpired={onSessionExpired}
+              />
+            ) : selectedModule === 'purchases' ? (
+              <PurchasesScreen
+                token={token}
+                companyId={context.companyId}
+                refreshKey={refreshTick}
+                onSessionExpired={onSessionExpired}
+              />
             ) : (
               <ModulePlaceholder
                 module={activeModule}
@@ -793,6 +831,8 @@ export default function DashboardScreen({
         visible={dialog.visible}
         token={token}
         companyId={context.companyId}
+        branchId={user.branchId}
+        userRole={user.role}
         onClose={closeDialog}
         onDone={handleDialogDone}
         onSessionExpired={onSessionExpired}
@@ -829,6 +869,12 @@ const styles = StyleSheet.create({
 
   greeting: {
     marginBottom: spacing.xl,
+  },
+
+  companySelector: {
+    maxWidth: 460,
+    marginBottom: spacing.xl,
+    zIndex: 2,
   },
 
   greetingTitle: {

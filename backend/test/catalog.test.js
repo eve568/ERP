@@ -1,8 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import { createApp } from '../src/app.js';
 import { env } from '../src/config/env.js';
+import { updateProduct } from '../src/modules/catalog/catalog.service.js';
 import { Category } from '../src/models/category.model.js';
 import { Product } from '../src/models/product.model.js';
 
@@ -48,4 +50,32 @@ test('Crear categoría no simula persistencia sin MongoDB', async () => {
 test('Los modelos de catálogo tienen índices de empresa', () => {
   assert.equal(Category.schema.indexes().some(([fields, options]) => fields.companyId === 1 && fields.name === 1 && options.unique), true);
   assert.equal(Product.schema.indexes().some(([fields, options]) => fields.companyId === 1 && fields.sku === 1 && options.unique), true);
+});
+
+test('ADMIN no puede mover un producto a otra empresa al actualizarlo', async () => {
+  const selectedCompanyId = '507f1f77bcf86cd799439011';
+  const productCompanyId = '507f1f77bcf86cd799439012';
+  const originalFindById = Product.findById;
+
+  mongoose.connection.emit('connected');
+  Product.findById = () => ({
+    lean: async () => ({
+      _id: '507f1f77bcf86cd799439013',
+      companyId: new mongoose.Types.ObjectId(productCompanyId),
+    }),
+  });
+
+  try {
+    await assert.rejects(
+      updateProduct(
+        '507f1f77bcf86cd799439013',
+        { companyId: selectedCompanyId, name: 'Producto modificado' },
+        { sub: 'admin-user', role: 'ADMIN' }
+      ),
+      (error) => error.statusCode === 403
+    );
+  } finally {
+    Product.findById = originalFindById;
+    mongoose.connection.emit('disconnected');
+  }
 });

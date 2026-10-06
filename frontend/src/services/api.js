@@ -1,3 +1,5 @@
+import { loadSession } from './session';
+
 const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 export class ApiError extends Error {
@@ -29,8 +31,86 @@ function withQuery(path, params = {}) {
   return `${path}?${query}`;
 }
 
+function withCompanyId(path, companyId) {
+  const [pathname, query = ''] = path.split('?');
+  const params = query
+    .split('&')
+    .filter(
+      (parameter) =>
+        parameter && parameter.split('=', 1)[0] !== 'companyId'
+    );
+  params.push(`companyId=${encodeURIComponent(String(companyId))}`);
+  return `${pathname}?${params.join('&')}`;
+}
+
+function withoutCompanyId(path) {
+  const [pathname, query = ''] = path.split('?');
+  const params = query
+    .split('&')
+    .filter(
+      (parameter) =>
+        parameter && parameter.split('=', 1)[0] !== 'companyId'
+    );
+  return params.length ? `${pathname}?${params.join('&')}` : pathname;
+}
+
+function withCompanyIdInBody(body, companyId) {
+  if (typeof body !== 'string') return body;
+
+  try {
+    const payload = JSON.parse(body);
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      return body;
+    }
+    return JSON.stringify({ ...payload, companyId });
+  } catch {
+    return body;
+  }
+}
+
+function withoutCompanyIdInBody(body) {
+  if (typeof body !== 'string') return body;
+
+  try {
+    const payload = JSON.parse(body);
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      return body;
+    }
+    delete payload.companyId;
+    return JSON.stringify(payload);
+  } catch {
+    return body;
+  }
+}
+
 export async function apiRequest(path, options = {}) {
   const { token, headers: customHeaders, ...requestOptions } = options;
+  const session = loadSession();
+  const sessionCompanyId =
+    session?.user?.role === 'ADMIN'
+      ? session.activeCompanyId
+      : session?.user?.companyId;
+  const companyId =
+    sessionCompanyId && typeof sessionCompanyId === 'object'
+      ? sessionCompanyId._id ?? sessionCompanyId.id
+      : sessionCompanyId;
+  const companyScoped =
+    path.startsWith('/api/') &&
+    !path.startsWith('/api/auth/') &&
+    !path.startsWith('/api/health') &&
+    !path.startsWith('/api/companies');
+
+  if (companyScoped && companyId) {
+    if (requestOptions.body !== undefined && requestOptions.body !== null) {
+      requestOptions.body = withCompanyIdInBody(requestOptions.body, companyId);
+    } else {
+      path = withCompanyId(path, companyId);
+    }
+  } else if (companyScoped) {
+    path = withoutCompanyId(path);
+    requestOptions.body = withoutCompanyIdInBody(requestOptions.body);
+  }
+
   const headers = {
     'content-type': 'application/json',
     ...customHeaders,
@@ -103,47 +183,117 @@ export async function listCategories(token, companyId) {
   return apiRequest(withQuery('/api/categories', { companyId }), { token });
 }
 
-export async function listProducts(token, companyId, limit = 100) {
+function normalizeProductListOptions(options) {
+  return typeof options === 'number' ? { limit: options } : options ?? {};
+}
+
+export async function listProducts(token, companyId, options = {}) {
+  const { page = 1, limit = 100, q, status, categoryId } =
+    normalizeProductListOptions(options);
   return apiRequest(
-    withQuery('/api/products', { companyId, page: 1, limit }),
+    withQuery('/api/products', { companyId, page, limit, q, status, categoryId }),
     { token }
   );
 }
 
-export async function listWarehouses(token, companyId) {
-  return apiRequest(withQuery('/api/warehouses', { companyId }), { token });
+function normalizeListOptions(options) {
+  return typeof options === 'string' ? { branchId: options } : options ?? {};
 }
 
-export async function listInventory(token, companyId) {
-  return apiRequest(withQuery('/api/inventory', { companyId }), { token });
-}
-
-export async function listInventoryMovements(token, companyId) {
+export async function listWarehouses(token, companyId, options = {}) {
+  const { branchId, status } = normalizeListOptions(options);
   return apiRequest(
-    withQuery('/api/inventory/movements', { companyId }),
+    withQuery('/api/warehouses', { companyId, branchId, status }),
+    { token }
+  );
+}
+
+export async function listInventory(token, companyId, options = {}) {
+  const { warehouseId, branchId, productId, q } =
+    normalizeListOptions(options);
+  return apiRequest(
+    withQuery('/api/inventory', {
+      companyId,
+      warehouseId,
+      branchId,
+      productId,
+      q,
+    }),
+    { token }
+  );
+}
+
+export async function listInventoryMovements(token, companyId, options = {}) {
+  const { warehouseId, branchId, productId, q, type, limit } =
+    normalizeListOptions(options);
+  return apiRequest(
+    withQuery('/api/inventory/movements', {
+      companyId,
+      warehouseId,
+      branchId,
+      productId,
+      q,
+      type,
+      limit,
+    }),
     { token }
   );
 }
 
 // Ventas y compras
-export async function listSales(token, companyId) {
-  return apiRequest(withQuery('/api/sales', { companyId }), { token });
-}
-
-export async function listPurchases(token, companyId) {
-  return apiRequest(withQuery('/api/purchases', { companyId }), { token });
-}
-
-// Personas
-export async function listCustomers(token, companyId, limit = 100) {
+export async function listSales(token, companyId, options = {}) {
+  const { status, q, limit } = options;
   return apiRequest(
-    withQuery('/api/customers', { companyId, page: 1, limit }),
+    withQuery('/api/sales', { companyId, status, q, limit }),
     { token }
   );
 }
 
-export async function listSuppliers(token, companyId) {
-  return apiRequest(withQuery('/api/suppliers', { companyId }), { token });
+export async function getSale(token, companyId, saleId) {
+  return apiRequest(
+    withQuery(`/api/sales/${encodeURIComponent(saleId)}`, { companyId }),
+    { token }
+  );
+}
+
+export async function listPurchases(token, companyId, options = {}) {
+  const { status, q, limit } = options;
+  return apiRequest(
+    withQuery('/api/purchases', { companyId, status, q, limit }),
+    { token }
+  );
+}
+
+export async function getPurchase(token, companyId, purchaseId) {
+  return apiRequest(
+    withQuery(`/api/purchases/${encodeURIComponent(purchaseId)}`, {
+      companyId,
+    }),
+    { token }
+  );
+}
+
+// Personas
+function normalizePartnerListOptions(options) {
+  return typeof options === 'number' ? { limit: options } : options ?? {};
+}
+
+export async function listCustomers(token, companyId, options = {}) {
+  const { page = 1, limit = 100, q, status } =
+    normalizePartnerListOptions(options);
+  return apiRequest(
+    withQuery('/api/customers', { companyId, page, limit, q, status }),
+    { token }
+  );
+}
+
+export async function listSuppliers(token, companyId, options = {}) {
+  const { page = 1, limit = 100, q, status } =
+    normalizePartnerListOptions(options);
+  return apiRequest(
+    withQuery('/api/suppliers', { companyId, page, limit, q, status }),
+    { token }
+  );
 }
 
 export async function listEmployees(token, companyId) {
