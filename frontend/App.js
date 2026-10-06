@@ -53,7 +53,7 @@ export default function App() {
 
   const handleLoginSuccess = useCallback((loginData) => {
     saveSession(loginData);
-    setSession(loginData);
+    setSession(loadSession());
     setNotice(null);
   }, []);
 
@@ -62,7 +62,7 @@ export default function App() {
 
     const updatedSession = { ...session, activeCompanyId: companyId };
     saveSession(updatedSession);
-    setSession(updatedSession);
+    setSession(loadSession());
   }, [session]);
 
   const handleLogout = useCallback(async () => {
