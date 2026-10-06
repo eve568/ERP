@@ -54,7 +54,28 @@ export async function listCategories(query, user) {
   const filter = { companyId };
   if (query.status) filter.status = query.status;
   if (query.q?.trim()) filter.name = new RegExp(escapeRegex(query.q.trim()), 'i');
-  return Category.find(filter).sort({ name: 1 }).lean();
+
+  let categories = await Category.find(filter).sort({ name: 1 }).lean();
+
+  // Modo de pruebas: si la empresa todavía no tiene categorías y la consulta
+  // no aplica filtros, crea una categoría base para permitir registrar productos.
+  if (categories.length === 0 && !query.status && !query.q?.trim()) {
+    const defaultCategory = await Category.findOneAndUpdate(
+      { companyId, name: 'General' },
+      {
+        $setOnInsert: {
+          companyId,
+          name: 'General',
+          description: 'Categoría automática para pruebas'
+        },
+        $set: { status: 'ACTIVE' }
+      },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    ).lean();
+    categories = [defaultCategory];
+  }
+
+  return categories;
 }
 
 export async function updateCategory(id, changes, user) {
