@@ -72,20 +72,33 @@ export async function loginUser({ email, password }) {
     throw new AppError('Credenciales inválidas', 401);
   }
 
-  // Permite iniciar sesión sin empresa durante la configuración inicial.
-  // Si existe exactamente una empresa activa, se asigna automáticamente;
-  // si no existe ninguna o hay varias, el usuario conserva companyId = null.
-  if (user.role !== 'ADMIN' && !user.companyId) {
-    const companies = await Company.find({ status: 'ACTIVE' })
+  // Modo de pruebas: todo usuario sin empresa recibe automáticamente un
+  // contexto válido. Si no existe ninguna empresa activa, se crea una empresa
+  // técnica de pruebas para evitar bloqueos repetidos por companyId.
+  if (!user.companyId) {
+    let company = await Company.findOne({ status: 'ACTIVE' })
       .sort({ createdAt: 1, _id: 1 })
       .select('_id')
-      .limit(2)
       .lean();
 
-    if (companies.length === 1) {
-      user.companyId = companies[0]._id;
-      await user.save();
+    if (!company) {
+      company = await Company.findOneAndUpdate(
+        { taxId: 'ERP-TEST' },
+        {
+          $setOnInsert: {
+            name: 'Empresa de Pruebas',
+            legalName: 'Empresa de Pruebas ERP',
+            taxId: 'ERP-TEST',
+            status: 'ACTIVE'
+          },
+          $set: { status: 'ACTIVE' }
+        },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+      ).lean();
     }
+
+    user.companyId = company._id;
+    await user.save();
   }
 
   const token = jwt.sign({
