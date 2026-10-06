@@ -88,8 +88,7 @@ export async function loginUser({ email, password }) {
           $setOnInsert: {
             name: 'Empresa de Pruebas',
             legalName: 'Empresa de Pruebas ERP',
-            taxId: 'ERP-TEST',
-            status: 'ACTIVE'
+            taxId: 'ERP-TEST'
           },
           $set: { status: 'ACTIVE' }
         },
