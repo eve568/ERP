@@ -62,3 +62,12 @@ test('Cambiar contraseña exige autenticación y campos', async () => {
   assert.equal(response.status, 401);
   assert.equal(body.message, 'Autenticación requerida');
 });
+
+
+test('El modelo de usuario conserva la relación interna con empresa', () => {
+  assert.equal(User.schema.path('companyId').instance, 'ObjectId');
+});
+
+test('El contexto de empresa no se solicita como dato visible de autenticación', () => {
+  assert.equal(User.schema.path('companyId').options.required, undefined);
+});
