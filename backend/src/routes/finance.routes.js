@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
+import { authorizePermission } from '../middleware/authorize.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { requireFields } from '../utils/validation.js';
 import { sendSuccess } from '../utils/response.js';
@@ -10,11 +11,11 @@ router.use(requireAuth);
 
 function resourceRoutes(resource, fields) {
   const resourceRouter = Router();
-  resourceRouter.post('/', asyncHandler(async (request, response) => {
+  resourceRouter.post('/', authorizePermission('CREATE'), asyncHandler(async (request, response) => {
     requireFields(request.body, fields);
     return sendSuccess(response, await createFinancialRecord(resource, request.body, request.user), 'Registro financiero creado correctamente', 201);
   }));
-  resourceRouter.get('/', asyncHandler(async (request, response) => sendSuccess(response, await listFinancialRecords(resource, request.query, request.user))));
+  resourceRouter.get('/', authorizePermission('VIEW'), asyncHandler(async (request, response) => sendSuccess(response, await listFinancialRecords(resource, request.query, request.user))));
   return resourceRouter;
 }
 
