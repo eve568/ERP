@@ -4,6 +4,9 @@ import { env } from '../../config/env.js';
 import { getDatabaseState } from '../../config/database.js';
 import { User } from '../../models/user.model.js';
 import { Company } from '../../models/company.model.js';
+import { Branch } from '../../models/branch.model.js';
+import { Category } from '../../models/category.model.js';
+import { Warehouse } from '../../models/warehouse.model.js';
 import { AppError } from '../../utils/errors.js';
 
 function ensureAuthConfiguration() {
@@ -97,6 +100,63 @@ export async function loginUser({ email, password }) {
     }
 
     user.companyId = company._id;
+    await user.save();
+  }
+
+  // Bootstrap idempotente para pruebas: deja listo el contexto mínimo que
+  // necesitan catálogo, inventario y ventas.
+  const companyId = user.companyId;
+  let branch = await Branch.findOne({ companyId, status: 'ACTIVE' })
+    .sort({ createdAt: 1, _id: 1 })
+    .lean();
+
+  if (!branch) {
+    branch = await Branch.findOneAndUpdate(
+      { companyId, name: 'Principal' },
+      {
+        $setOnInsert: {
+          companyId,
+          name: 'Principal',
+          address: 'Sucursal de pruebas'
+        },
+        $set: { status: 'ACTIVE' }
+      },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    ).lean();
+  }
+
+  await Category.findOneAndUpdate(
+    { companyId, name: 'General' },
+    {
+      $setOnInsert: {
+        companyId,
+        name: 'General',
+        description: 'Categoría automática para pruebas'
+      },
+      $set: { status: 'ACTIVE' }
+    },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+
+  await Warehouse.findOneAndUpdate(
+    { companyId, name: 'Pruebas' },
+    {
+      $setOnInsert: {
+        companyId,
+        name: 'Pruebas',
+        branchId: branch._id,
+        address: 'Almacén automático para pruebas'
+      },
+      $set: {
+        branchId: branch._id,
+        status: 'ACTIVE'
+      }
+    },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+
+  if (!user.branchId || String(user.branchId) !== String(branch._id)) {
+    user.branchId = branch._id;
     await user.save();
   }
 
