@@ -161,6 +161,9 @@ export default function App() {
                 <Pressable
                   key={module.key}
                   onPress={() => setSelectedModule(module.key)}
+                  onClick={() => setSelectedModule(module.key)}
+                  accessibilityRole="button"
+                  accessibilityLabel={module.label}
                   style={[
                     styles.menuItem,
                     active && styles.menuItemActive,
@@ -414,24 +417,28 @@ export default function App() {
                 title="Nueva venta"
                 description="Registrar una operación de venta"
                 icon="+"
+                onPress={() => setSelectedModule('sales')}
               />
 
               <QuickAction
                 title="Nuevo producto"
                 description="Agregar un producto al catálogo"
                 icon="+"
+                onPress={() => setSelectedModule('inventory')}
               />
 
               <QuickAction
                 title="Nuevo cliente"
                 description="Registrar un cliente"
                 icon="+"
+                onPress={() => setSelectedModule('people')}
               />
 
               <QuickAction
                 title="Movimiento"
                 description="Registrar movimiento de inventario"
                 icon="+"
+                onPress={() => setSelectedModule('inventory')}
               />
             </View>
           </ScrollView>
@@ -441,9 +448,18 @@ export default function App() {
   );
 }
 
-function QuickAction({ title, description, icon }) {
+function QuickAction({ title, description, icon, onPress }) {
   return (
-    <Pressable style={styles.quickCard}>
+    <Pressable
+      onPress={onPress}
+      onClick={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      style={({ pressed }) => [
+        styles.quickCard,
+        pressed && styles.quickCardPressed,
+      ]}
+    >
       <View style={styles.quickIcon}>
         <Text style={styles.quickIconText}>{icon}</Text>
       </View>
@@ -918,6 +934,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     ...shadows.small,
+  },
+
+  quickCardPressed: {
+    opacity: 0.82,
   },
 
   quickIcon: {
