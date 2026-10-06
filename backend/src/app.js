@@ -40,6 +40,15 @@ export function createApp() {
   app.use(configureCors());
   app.use(express.json({ limit: '1mb' }));
   app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
+
+  // Los módulos del ERP son datos dinámicos. Evita respuestas 304 que hagan
+  // que el navegador reutilice listas antiguas después de crear registros.
+  app.use('/api', (_request, response, next) => {
+    response.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.set('Pragma', 'no-cache');
+    response.set('Expires', '0');
+    next();
+  });
   app.use(rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 100,
