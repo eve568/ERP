@@ -10,14 +10,16 @@
     "start": "expo start",
     "web": "expo start --web",
     "build:web": "expo export --platform web",
-    "android": "expo start --android"
+    "android": "expo start --android",
+    "build:android:apk": "npx eas-cli build --platform android --profile preview"
   },
   "dependencies": {
     "expo": "^54.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-native": "^0.81.4",
-    "react-native-web": "^0.21.1"
+    "react-native-web": "^0.21.1",
+    "expo-secure-store": "~15.0.8"
   },
   "devDependencies": {
     "wrangler": "^4.143.1"
