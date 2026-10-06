@@ -39,11 +39,26 @@ export function loadSession() {
 }
 
 export function saveSession(session) {
-  memorySession = session;
+  const companyId =
+    session?.user?.companyId && typeof session.user.companyId === 'object'
+      ? session.user.companyId._id ?? session.user.companyId.id ?? null
+      : session?.user?.companyId ?? null;
+  const normalizedSession = session?.user
+    ? {
+        ...session,
+        user: { ...session.user, companyId },
+        activeCompanyId:
+          session.user.role === 'ADMIN'
+            ? session.activeCompanyId ?? null
+            : companyId,
+      }
+    : session;
+
+  memorySession = normalizedSession;
 
   if (canUseStorage()) {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedSession));
     } catch (saveError) {
       // Si el almacenamiento falla, la sesión sigue viva en memoria.
     }

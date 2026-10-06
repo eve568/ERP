@@ -10,7 +10,8 @@ function ensureDatabase() {
 }
 function companyFor(user, requested) {
   const companyId = user.role === 'ADMIN' ? requested : user.companyId;
-  if (!companyId || !mongoose.isValidObjectId(companyId)) throw new AppError('companyId no es válido', 400);
+  if (!companyId) throw new AppError(user.role === 'ADMIN' ? 'Selecciona una empresa activa antes de continuar' : 'Tu usuario no tiene una empresa asignada', 400);
+  if (!mongoose.isValidObjectId(companyId)) throw new AppError('La empresa seleccionada no es válida', 400);
   if (user.role !== 'ADMIN' && requested && requested !== user.companyId) throw new AppError('No tienes acceso a esta empresa', 403);
   return companyId;
 }

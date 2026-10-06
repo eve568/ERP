@@ -36,7 +36,6 @@ export default function MovementForm({
   const [adjustmentDirection, setAdjustmentDirection] = useState('INCREASE');
   const [quantity, setQuantity] = useState('');
   const [reason, setReason] = useState('');
-  const [referenceId, setReferenceId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
@@ -113,11 +112,6 @@ export default function MovementForm({
       setError('El motivo no puede exceder 300 caracteres.');
       return;
     }
-    if (referenceId.trim() && !/^[a-f\d]{24}$/i.test(referenceId.trim())) {
-      setError('La referencia debe ser un ObjectId válido.');
-      return;
-    }
-
     setSubmitting(true);
     setError(null);
 
@@ -132,8 +126,6 @@ export default function MovementForm({
     };
 
     if (reason.trim()) payload.reason = reason.trim();
-    if (referenceId.trim()) payload.referenceId = referenceId.trim();
-    if (companyId) payload.companyId = companyId;
 
     try {
       await createInventoryMovement(token, payload);

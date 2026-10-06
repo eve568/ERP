@@ -275,9 +275,10 @@ export default function DashboardScreen({
           });
 
           const preferredId = activeCompanyId ?? companyId;
-          const selectedCompany = activeCompanies.find(
-            (company) => company._id === preferredId
-          );
+          const selectedCompany =
+            activeCompanies.find((company) => company._id === preferredId) ??
+            activeCompanies[0] ??
+            null;
           companyId = selectedCompany?._id ?? null;
 
           if (activeCompanyId !== companyId) {
