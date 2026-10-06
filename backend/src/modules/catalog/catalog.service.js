@@ -16,7 +16,7 @@ function ensureObjectId(value, fieldName) {
 
 function companyFor(user, requestedCompanyId) {
   const companyId = user.role === 'ADMIN' ? requestedCompanyId : user.companyId;
-  if (!companyId) throw new AppError('companyId es obligatorio', 400);
+  if (!companyId) throw new AppError(user.role === 'ADMIN' ? 'Selecciona una empresa activa antes de continuar' : 'Tu usuario no tiene una empresa asignada', 400);
   ensureObjectId(companyId, 'companyId');
   if (user.role !== 'ADMIN' && requestedCompanyId && requestedCompanyId !== user.companyId) {
     throw new AppError('No tienes acceso a esta empresa', 403);
