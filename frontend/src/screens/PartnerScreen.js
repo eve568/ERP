@@ -28,7 +28,7 @@ import {
 } from '../services/api';
 import { colors, radius, spacing, typography } from '../theme';
 import { formatDate } from '../utils/format';
-import { exportCustomersExcel, exportCustomersPdf, openCustomerPdfWindow, showCustomerPdfError } from '../utils/customerReports';
+import { exportCustomersExcel, exportCustomersPdf, openCustomerPdfWindow } from '../utils/customerReports';
 
 const PAGE_SIZE = 20;
 
@@ -225,7 +225,6 @@ export default function PartnerScreen({
       );
       setRefreshTick((current) => current + 1);
     } catch (requestError) {
-      showCustomerPdfError(pdfWindow, requestError?.message ?? 'No fue posible cargar los clientes.');
       if (isSessionError(requestError)) {
         onSessionExpired?.();
         return;
