@@ -1,6 +1,10 @@
 import { loadSession } from './session';
 
-const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000';
+const apiUrl =
+  process.env.EXPO_PUBLIC_API_URL ??
+  (typeof window !== 'undefined'
+    ? 'https://erp-backend-7xai.onrender.com'
+    : 'http://localhost:4000');
 
 export class ApiError extends Error {
   constructor(message, status = 0) {
