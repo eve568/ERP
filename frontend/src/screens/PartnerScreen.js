@@ -28,7 +28,7 @@ import {
 } from '../services/api';
 import { colors, radius, spacing, typography } from '../theme';
 import { formatDate } from '../utils/format';
-import { exportCustomersExcel, exportCustomersPdf } from '../utils/customerReports';
+import { exportCustomersExcel, exportCustomersPdf, openCustomerPdfWindow } from '../utils/customerReports';
 
 const PAGE_SIZE = 20;
 
@@ -225,6 +225,7 @@ export default function PartnerScreen({
       );
       setRefreshTick((current) => current + 1);
     } catch (requestError) {
+      pdfWindow?.close();
       if (isSessionError(requestError)) {
         onSessionExpired?.();
         return;
@@ -263,14 +264,19 @@ export default function PartnerScreen({
   }
 
   async function handleExport(format) {
-    setExporting(true);
+    let pdfWindow = null;
     try {
+      // Abrir la ventana durante el clic del usuario evita que el navegador
+      // la bloquee mientras esperamos las consultas del reporte.
+      if (format === 'pdf') pdfWindow = openCustomerPdfWindow();
+      setExporting(true);
       const customers = await loadAllCustomersForReport();
       if (!customers.length) {
+        pdfWindow?.close();
         onToast?.('No hay clientes para exportar con los filtros actuales.', 'error');
         return;
       }
-      if (format === 'pdf') exportCustomersPdf(customers);
+      if (format === 'pdf') exportCustomersPdf(customers, pdfWindow);
       else exportCustomersExcel(customers);
       onToast?.(`Reporte de clientes listo (${customers.length} registros).`, 'success');
     } catch (requestError) {
