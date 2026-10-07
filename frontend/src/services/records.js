@@ -115,3 +115,20 @@ export function createPurchase(token, payload) {
     body: JSON.stringify(payload),
   });
 }
+
+
+export function createIncomeRecord(token, payload) {
+  return apiRequest('/api/finance/incomes', {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
+  });
+}
+
+export function createExpenseRecord(token, payload) {
+  return apiRequest('/api/finance/expenses', {
+    method: 'POST',
+    token,
+    body: JSON.stringify(payload),
+  });
+}
