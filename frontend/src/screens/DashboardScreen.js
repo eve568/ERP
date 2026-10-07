@@ -13,6 +13,7 @@ import AppHeader from '../components/AppHeader';
 import AppSidebar from '../components/AppSidebar';
 import ConnectionStatus from '../components/ConnectionStatus';
 import EmptyBlock from '../components/EmptyBlock';
+import EmailTestCard from '../components/EmailTestCard';
 import ModulePlaceholder from '../components/ModulePlaceholder';
 import PickerField from '../components/PickerField';
 import PartnerScreen from './PartnerScreen';
@@ -721,6 +722,18 @@ export default function DashboardScreen({
                     />
                   ))}
                 </View>
+
+                <SectionHeader
+                  title="Correo de prueba"
+                  subtitle="Integración del ERP con Resend"
+                />
+
+                <EmailTestCard
+                  token={token}
+                  defaultEmail={user.email ?? ''}
+                  onSessionExpired={onSessionExpired}
+                  onToast={onToast}
+                />
 
                 <SectionHeader
                   title="Actividad reciente"
