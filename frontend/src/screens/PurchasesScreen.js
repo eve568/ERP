@@ -12,6 +12,7 @@ import AppButton from '../components/AppButton';
 import AppModal from '../components/AppModal';
 import EmptyBlock from '../components/EmptyBlock';
 import PickerField from '../components/PickerField';
+import PurchaseForm from '../components/forms/PurchaseForm';
 import { getPurchase, isSessionError, listPurchases } from '../services/api';
 import { colors, radius, spacing, typography } from '../theme';
 import { formatCurrency, formatDateTime } from '../utils/format';
@@ -101,8 +102,11 @@ function PurchaseDetail({ purchase, loading, error }) {
 export default function PurchasesScreen({
   token,
   companyId,
+  branchId,
+  userRole,
   refreshKey,
   onSessionExpired,
+  onToast,
 }) {
   const [purchases, setPurchases] = useState({
     status: 'loading',
@@ -118,6 +122,13 @@ export default function PurchasesScreen({
     error: null,
   });
   const [retryTick, setRetryTick] = useState(0);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  function handleCreated(message, type = 'success') {
+    setCreateOpen(false);
+    onToast?.(message, type);
+    setRetryTick((tick) => tick + 1);
+  }
 
   useEffect(() => {
     if (!companyId) {
@@ -214,6 +225,11 @@ export default function PurchasesScreen({
             Recepciones registradas en la empresa activa
           </Text>
         </View>
+        <AppButton
+          label="Nueva compra"
+          onPress={() => setCreateOpen(true)}
+          disabled={!companyId}
+        />
       </View>
       <View style={styles.filters}>
         <TextInput
@@ -301,6 +317,25 @@ export default function PurchasesScreen({
           ) : null}
         </>
       ) : null}
+      <AppModal
+        visible={createOpen}
+        title="Nueva compra"
+        subtitle="Registra una compra y recibe los productos en un almacén."
+        onClose={() => setCreateOpen(false)}
+        maxWidth={860}
+      >
+        {createOpen ? (
+          <PurchaseForm
+            token={token}
+            companyId={companyId}
+            branchId={branchId}
+            userRole={userRole}
+            onCancel={() => setCreateOpen(false)}
+            onDone={handleCreated}
+            onSessionExpired={onSessionExpired}
+          />
+        ) : null}
+      </AppModal>
       <AppModal
         visible={Boolean(selectedPurchaseId)}
         title="Detalle de compra"
