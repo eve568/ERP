@@ -77,8 +77,7 @@ export function exportCustomersPdf(customers, report) {
   }
 
   const generatedAt = new Date().toLocaleString('es-MX');
-  report.document.open();
-  report.document.write(`<!doctype html>
+  const html = `<!doctype html>
   <html><head><meta charset="UTF-8"><title>Reporte de clientes</title>
   <style>
     body{font-family:Arial,sans-serif;color:#172033;padding:28px}
@@ -90,7 +89,11 @@ export function exportCustomersPdf(customers, report) {
   <h1>Reporte de clientes</h1>
   <div class="meta">Generado: ${escapeHtml(generatedAt)} · Total: ${customers.length}</div>
   ${reportTable(customers)}
-  <script>window.onload=()=>{window.setTimeout(()=>window.print(),150);};<\/script>
-  </body></html>`);
-  report.document.close();
+  <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));<\/script>
+  </body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  report.location.replace(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
