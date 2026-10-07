@@ -5,6 +5,8 @@ import {
   Text,
   TextInput,
   View,
+  Platform,
+  useWindowDimensions,
 } from 'react-native';
 
 import AppButton from '../components/AppButton';
@@ -96,6 +98,8 @@ export default function PartnerScreen({
   onSessionExpired,
   onToast,
 }) {
+  const { width } = useWindowDimensions();
+  const isMobile = width < 600;
   const config = resourceConfig[resourceName];
   const resource = partnerFields[resourceName];
   const [query, setQuery] = useState('');
@@ -295,15 +299,15 @@ export default function PartnerScreen({
 
   return (
     <View style={styles.screen}>
-      <View style={styles.heading}>
+      <View style={[styles.heading, isMobile && styles.headingMobile]}>
         <View style={styles.headingCopy}>
           <Text style={styles.title}>{config.title}</Text>
           <Text style={styles.subtitle}>
             Registros de la empresa activa · {listState.pagination.total} en total
           </Text>
         </View>
-        <View style={styles.headingActions}>
-          {resourceName === 'customers' ? (
+        <View style={[styles.headingActions, isMobile && styles.headingActionsMobile]}>
+          {resourceName === 'customers' && Platform.OS === 'web' ? (
             <>
               <AppButton
                 label="Exportar PDF"
@@ -335,7 +339,7 @@ export default function PartnerScreen({
         />
       ) : (
         <>
-          <View style={styles.filters}>
+          <View style={[styles.filters, isMobile && styles.filtersMobile]}>
             <TextInput
               value={query}
               onChangeText={(value) => {
@@ -346,7 +350,7 @@ export default function PartnerScreen({
               placeholderTextColor={colors.textSecondary}
               autoCapitalize="none"
               autoCorrect={false}
-              style={styles.search}
+              style={[styles.search, isMobile && styles.searchMobile]}
               accessibilityLabel={`Buscar ${config.title.toLowerCase()}`}
             />
             <PickerField
@@ -357,7 +361,7 @@ export default function PartnerScreen({
                 setStatusFilter(value);
                 setPage(1);
               }}
-              style={styles.statusPicker}
+              style={[styles.statusPicker, isMobile && styles.statusPickerMobile]}
             />
           </View>
 
@@ -558,11 +562,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  headingMobile: {
+    alignItems: 'stretch',
+    flexDirection: 'column',
+  },
+
   headingActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-end',
     gap: spacing.sm,
+  },
+
+  headingActionsMobile: {
+    justifyContent: 'flex-start',
   },
 
   title: {
@@ -584,6 +597,11 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
 
+  filtersMobile: {
+    alignItems: 'stretch',
+    flexDirection: 'column',
+  },
+
   search: {
     flex: 1,
     minWidth: 220,
@@ -597,8 +615,17 @@ const styles = StyleSheet.create({
     fontSize: typography.size.sm,
   },
 
+  searchMobile: {
+    width: '100%',
+    minWidth: 0,
+  },
+
   statusPicker: {
     width: 220,
+  },
+
+  statusPickerMobile: {
+    width: '100%',
   },
 
   list: {
