@@ -11,13 +11,24 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import { colors } from './src/theme';
 
 export default function App() {
-  const [session, setSession] = useState(() => loadSession());
+  const [session, setSession] = useState(null);
+  const [sessionReady, setSessionReady] = useState(false);
   const [health, setHealth] = useState(null);
   const [healthStatus, setHealthStatus] = useState('loading');
   const [healthError, setHealthError] = useState(null);
   const [healthTick, setHealthTick] = useState(0);
   const [toast, setToast] = useState(null);
   const [notice, setNotice] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    loadSession().then((storedSession) => {
+      if (!mounted) return;
+      setSession(storedSession);
+      setSessionReady(true);
+    });
+    return () => { mounted = false; };
+  }, []);
 
   /* Estado de conexión con la API (con reintento manual) */
   useEffect(() => {
@@ -53,7 +64,7 @@ export default function App() {
 
   const handleLoginSuccess = useCallback((loginData) => {
     saveSession(loginData);
-    setSession(loadSession());
+    setSession(loginData);
     setNotice(null);
   }, []);
 
@@ -62,7 +73,7 @@ export default function App() {
 
     const updatedSession = { ...session, activeCompanyId: companyId };
     saveSession(updatedSession);
-    setSession(loadSession());
+    setSession(updatedSession);
   }, [session]);
 
   const handleLogout = useCallback(async () => {
@@ -89,6 +100,10 @@ export default function App() {
   const retryHealth = useCallback(() => {
     setHealthTick((tick) => tick + 1);
   }, []);
+
+  if (!sessionReady) {
+    return <SafeAreaView style={styles.safeArea} />;
+  }
 
   if (!session) {
     return <LoginScreen notice={notice} onLoginSuccess={handleLoginSuccess} />;
