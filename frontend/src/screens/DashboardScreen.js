@@ -1052,10 +1052,7 @@ const styles = StyleSheet.create({
     color: colors.danger,
     fontSize: typography.size.sm,
   },
-});,
-    available: true,
-  },
-];
+});
 
 const quickActions = [
   {
