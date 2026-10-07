@@ -50,15 +50,24 @@ export function exportCustomersExcel(customers) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
-export function exportCustomersPdf(customers) {
+export function openCustomerPdfWindow() {
   if (typeof window === 'undefined') {
     throw new Error('La exportación a PDF está disponible en la versión web.');
   }
-  const report = window.open('', '_blank', 'noopener,noreferrer');
+  const report = window.open('', '_blank');
   if (!report) throw new Error('Permite ventanas emergentes para generar el PDF.');
+  report.document.write('<!doctype html><html><body style="font-family:Arial;padding:28px">Preparando reporte...</body></html>');
+  report.document.close();
+  return report;
+}
+
+export function exportCustomersPdf(customers, report) {
+  if (!report || report.closed) {
+    throw new Error('No fue posible abrir el reporte. Permite ventanas emergentes.');
+  }
 
   const generatedAt = new Date().toLocaleString('es-MX');
   report.document.write(`<!doctype html>
