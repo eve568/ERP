@@ -28,6 +28,7 @@ import {
 } from '../services/api';
 import { colors, radius, spacing, typography } from '../theme';
 import { formatDate } from '../utils/format';
+import { exportCustomersExcel, exportCustomersPdf } from '../utils/customerReports';
 
 const PAGE_SIZE = 20;
 
@@ -109,6 +110,7 @@ export default function PartnerScreen({
   });
   const [modal, setModal] = useState({ mode: null, record: null });
   const [busyId, setBusyId] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!companyId) {
@@ -237,6 +239,51 @@ export default function PartnerScreen({
     }
   }
 
+  async function loadAllCustomersForReport() {
+    const first = await listCustomers(token, companyId, {
+      page: 1,
+      limit: 100,
+      q: query.trim() || undefined,
+      status: statusFilter || undefined,
+    });
+    const firstData = first?.data ?? {};
+    const items = [...(firstData.items ?? [])];
+    const pages = firstData.pagination?.pages ?? 1;
+
+    for (let currentPage = 2; currentPage <= pages; currentPage += 1) {
+      const payload = await listCustomers(token, companyId, {
+        page: currentPage,
+        limit: 100,
+        q: query.trim() || undefined,
+        status: statusFilter || undefined,
+      });
+      items.push(...(payload?.data?.items ?? []));
+    }
+    return items;
+  }
+
+  async function handleExport(format) {
+    setExporting(true);
+    try {
+      const customers = await loadAllCustomersForReport();
+      if (!customers.length) {
+        onToast?.('No hay clientes para exportar con los filtros actuales.', 'error');
+        return;
+      }
+      if (format === 'pdf') exportCustomersPdf(customers);
+      else exportCustomersExcel(customers);
+      onToast?.(`Reporte de clientes listo (${customers.length} registros).`, 'success');
+    } catch (requestError) {
+      if (isSessionError(requestError)) {
+        onSessionExpired?.();
+        return;
+      }
+      onToast?.(requestError?.message ?? 'No fue posible generar el reporte.', 'error');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const pageCount = listState.pagination.pages;
   const activeRecord = modal.record;
   const companyUnavailable = !companyId;
@@ -250,11 +297,30 @@ export default function PartnerScreen({
             Registros de la empresa activa · {listState.pagination.total} en total
           </Text>
         </View>
-        <AppButton
-          label={`Nuevo ${config.singular}`}
-          onPress={openCreate}
-          disabled={companyUnavailable}
-        />
+        <View style={styles.headingActions}>
+          {resourceName === 'customers' ? (
+            <>
+              <AppButton
+                label="Exportar PDF"
+                variant="secondary"
+                onPress={() => handleExport('pdf')}
+                loading={exporting}
+                disabled={companyUnavailable || exporting}
+              />
+              <AppButton
+                label="Exportar Excel"
+                variant="secondary"
+                onPress={() => handleExport('excel')}
+                disabled={companyUnavailable || exporting}
+              />
+            </>
+          ) : null}
+          <AppButton
+            label={`Nuevo ${config.singular}`}
+            onPress={openCreate}
+            disabled={companyUnavailable}
+          />
+        </View>
       </View>
 
       {companyUnavailable ? (
@@ -485,6 +551,13 @@ const styles = StyleSheet.create({
 
   headingCopy: {
     flex: 1,
+  },
+
+  headingActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
   },
 
   title: {
