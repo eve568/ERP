@@ -38,3 +38,32 @@ export function sendTestEmail(to) {
     html: '<h2>ERP Modular</h2><p>La integración con Resend funciona correctamente.</p>',
   });
 }
+
+
+function escapeHtml(value = '') {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+export function sendCustomerWelcomeEmail({ to, customerName, companyName }) {
+  const safeCustomerName = escapeHtml(customerName);
+  const safeCompanyName = escapeHtml(companyName || 'nuestra empresa');
+
+  return sendEmail({
+    to,
+    subject: `Registro confirmado - ${companyName || 'ERP Modular'}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1f2937">
+        <h2>¡Bienvenido, ${safeCustomerName}!</h2>
+        <p>Tu registro como cliente de <strong>${safeCompanyName}</strong> se realizó correctamente.</p>
+        <p>Ya formas parte de nuestros clientes y tus datos quedaron registrados en nuestro sistema.</p>
+        <p style="margin-top:28px">Gracias por confiar en nosotros.</p>
+        <p style="color:#6b7280;font-size:13px">Este es un mensaje automático; no es necesario responderlo.</p>
+      </div>
+    `,
+  });
+}
