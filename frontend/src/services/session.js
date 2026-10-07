@@ -22,40 +22,18 @@ function normalizeSession(session) {
     : session;
 }
 
-function readStoredSession() {
-  if (Platform.OS === 'web') {
-    if (typeof window === 'undefined' || !window.localStorage) return null;
-    return window.localStorage.getItem(STORAGE_KEY);
-  }
-
-  return SecureStore.getItem(STORAGE_KEY);
-}
-
-function writeStoredSession(value) {
-  if (Platform.OS === 'web') {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem(STORAGE_KEY, value);
-    }
-    return;
-  }
-
-  SecureStore.setItem(STORAGE_KEY, value);
-}
-
-function removeStoredSession() {
-  if (Platform.OS === 'web') {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.removeItem(STORAGE_KEY);
-    }
-    return;
-  }
-
-  SecureStore.deleteItemAsync(STORAGE_KEY).catch(() => {});
-}
-
-export function loadSession() {
+export async function loadSession() {
   try {
-    const raw = readStoredSession();
+    let raw = null;
+    if (Platform.OS === 'web') {
+      raw =
+        typeof window !== 'undefined' && window.localStorage
+          ? window.localStorage.getItem(STORAGE_KEY)
+          : null;
+    } else {
+      raw = await SecureStore.getItemAsync(STORAGE_KEY);
+    }
+
     if (!raw) return memorySession;
 
     const parsed = normalizeSession(JSON.parse(raw));
@@ -64,29 +42,42 @@ export function loadSession() {
       return parsed;
     }
   } catch {
-    removeStoredSession();
+    await clearSession();
   }
 
   return memorySession;
 }
 
-export function saveSession(session) {
+export async function saveSession(session) {
   const normalizedSession = normalizeSession(session);
   memorySession = normalizedSession;
+  const value = JSON.stringify(normalizedSession);
 
   try {
-    writeStoredSession(JSON.stringify(normalizedSession));
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(STORAGE_KEY, value);
+      }
+    } else {
+      await SecureStore.setItemAsync(STORAGE_KEY, value);
+    }
   } catch {
-    // La sesión permanece en memoria aunque el almacenamiento del dispositivo falle.
+    // La sesión permanece en memoria aunque el almacenamiento falle.
   }
 
   return normalizedSession;
 }
 
-export function clearSession() {
+export async function clearSession() {
   memorySession = null;
   try {
-    removeStoredSession();
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(STORAGE_KEY);
+      }
+    } else {
+      await SecureStore.deleteItemAsync(STORAGE_KEY);
+    }
   } catch {
     // La sesión en memoria ya fue eliminada.
   }
