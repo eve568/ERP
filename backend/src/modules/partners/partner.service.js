@@ -4,6 +4,7 @@ import { Company } from '../../models/company.model.js';
 import { Customer } from '../../models/customer.model.js';
 import { Supplier } from '../../models/supplier.model.js';
 import { AppError } from '../../utils/errors.js';
+import { sendCustomerWelcomeEmail } from '../email/email.service.js';
 
 const models = { customers: Customer, suppliers: Supplier };
 
@@ -48,7 +49,20 @@ export async function createPartner(resource, payload, user) {
   const companyId = resolveCompanyId(payload.companyId, user);
   if (!(await Company.exists({ _id: companyId }))) throw new AppError('Empresa no encontrada', 404);
   try {
-    return await Model.create({ ...payload, companyId });
+    const item = await Model.create({ ...payload, companyId });
+
+    if (resource === 'customers' && item.email) {
+      const company = await Company.findById(companyId).select('name').lean();
+      sendCustomerWelcomeEmail({
+        to: item.email,
+        customerName: item.name,
+        companyName: company?.name
+      }).catch((error) => {
+        console.error('No fue posible enviar la confirmación de registro del cliente:', error.message);
+      });
+    }
+
+    return item;
   } catch (error) {
     if (error.code === 11000) throw new AppError('El RFC ya está registrado en esta empresa', 409);
     throw error;
