@@ -11,7 +11,9 @@ export const env = {
     .map((origin) => origin.trim())
     .filter(Boolean),
   jwtSecret: process.env.JWT_SECRET ?? '',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '15m'
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '15m',
+  resendApiKey: process.env.RESEND_API_KEY ?? '',
+  emailFrom: process.env.EMAIL_FROM ?? 'ERP Modular <onboarding@resend.dev>'
 };
 
 export function validateEnvironment() {
