@@ -94,7 +94,10 @@ const modules = [
     key: 'finance',
     label: 'Finanzas',
     detail: 'Ingresos y gastos',
-    icon: '
+    icon: '$',
+    available: true,
+  },
+];
 
 const quickActions = [
   {
