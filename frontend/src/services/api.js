@@ -345,3 +345,11 @@ export async function listPayments(token, companyId) {
     { token }
   );
 }
+
+export async function sendTestEmail(token, to) {
+  return apiRequest('/api/email/test', {
+    method: 'POST',
+    token,
+    body: JSON.stringify({ to }),
+  });
+}
