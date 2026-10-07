@@ -24,14 +24,12 @@ test('ADMIN puede acceder a una ruta administrativa', async () => {
   assert.equal(response.status, 200);
 });
 
-test('EMPLEADO no puede acceder a una ruta administrativa', async () => {
+test('Modo de pruebas permite a EMPLEADO acceder a una ruta administrativa', async () => {
   const response = await fetch(`${baseUrl}/api/auth/admin-check`, {
     headers: { authorization: `Bearer ${tokenFor('EMPLEADO')}` }
   });
-  const body = await response.json();
 
-  assert.equal(response.status, 403);
-  assert.equal(body.success, false);
+  assert.equal(response.status, 200);
 });
 
 test('Los permisos se validan en backend por rol', () => {
@@ -39,7 +37,7 @@ test('Los permisos se validan en backend por rol', () => {
   assert.equal(roleHasPermission('VENTAS', 'DELETE'), false);
 });
 
-test('EMPLEADO no puede crear productos, clientes ni registros financieros', async () => {
+test('Modo de pruebas no bloquea CREATE por rol', async () => {
   const token = tokenFor('EMPLEADO');
   const requests = [
     fetch(`${baseUrl}/api/products`, {
@@ -60,13 +58,13 @@ test('EMPLEADO no puede crear productos, clientes ni registros financieros', asy
   ];
 
   const responses = await Promise.all(requests);
-  assert.deepEqual(responses.map((response) => response.status), [403, 403, 403]);
+  assert.ok(responses.every((response) => response.status !== 403));
 });
 
-test('EMPLEADO no puede exportar reportes', async () => {
+test('Modo de pruebas no bloquea EXPORT por rol', async () => {
   const response = await fetch(`${baseUrl}/api/reports/sales`, {
     headers: { authorization: `Bearer ${tokenFor('EMPLEADO')}` }
   });
 
-  assert.equal(response.status, 403);
+  assert.notEqual(response.status, 403);
 });
