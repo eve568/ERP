@@ -813,8 +813,11 @@ export default function DashboardScreen({
               <PurchasesScreen
                 token={token}
                 companyId={context.companyId}
+                branchId={user.branchId}
+                userRole={user.role}
                 refreshKey={refreshTick}
                 onSessionExpired={onSessionExpired}
+                onToast={onToast}
               />
             ) : (
               <ModulePlaceholder
