@@ -59,9 +59,16 @@ export function openCustomerPdfWindow() {
   }
   const report = window.open('', '_blank');
   if (!report) throw new Error('Permite ventanas emergentes para generar el PDF.');
-  report.document.write('<!doctype html><html><body style="font-family:Arial;padding:28px">Preparando reporte...</body></html>');
+  report.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Reporte de clientes</title></head><body style="font-family:Arial;padding:28px">Preparando reporte...</body></html>');
   report.document.close();
   return report;
+}
+
+export function showCustomerPdfError(report, message) {
+  if (!report || report.closed) return;
+  report.document.open();
+  report.document.write(`<!doctype html><html><head><meta charset="UTF-8"><title>Error del reporte</title></head><body style="font-family:Arial;padding:28px"><h2>No se pudo generar el reporte</h2><p>${escapeHtml(message)}</p></body></html>`);
+  report.document.close();
 }
 
 export function exportCustomersPdf(customers, report) {
@@ -70,6 +77,7 @@ export function exportCustomersPdf(customers, report) {
   }
 
   const generatedAt = new Date().toLocaleString('es-MX');
+  report.document.open();
   report.document.write(`<!doctype html>
   <html><head><meta charset="UTF-8"><title>Reporte de clientes</title>
   <style>
@@ -82,7 +90,7 @@ export function exportCustomersPdf(customers, report) {
   <h1>Reporte de clientes</h1>
   <div class="meta">Generado: ${escapeHtml(generatedAt)} · Total: ${customers.length}</div>
   ${reportTable(customers)}
-  <script>window.onload=()=>{window.print();};<\/script>
+  <script>window.onload=()=>{window.setTimeout(()=>window.print(),150);};<\/script>
   </body></html>`);
   report.document.close();
 }
