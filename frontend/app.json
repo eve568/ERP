@@ -13,10 +13,16 @@
     },
     "android": {
       "package": "com.erpmodular.app",
-      "versionCode": 1
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [],
+      "allowBackup": false
     },
     "plugins": [
       "expo-secure-store"
-    ]
+    ],
+    "userInterfaceStyle": "automatic"
   }
 }
