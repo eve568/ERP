@@ -18,8 +18,6 @@ function SidebarItem({ module, active, onSelect }) {
     new Animated.Value(active ? 1 : 0)
   ).current;
 
-  const scale = useRef(new Animated.Value(1)).current;
-
   useEffect(() => {
     Animated.timing(activeOpacity, {
       toValue: active ? 1 : 0,
@@ -35,31 +33,12 @@ function SidebarItem({ module, active, onSelect }) {
   return (
     <Pressable
       onPress={handleSelect}
-      onPressIn={() => {
-        Animated.spring(scale, {
-          toValue: 0.985,
-          useNativeDriver: false,
-          friction: 9,
-          tension: 140,
-        }).start();
-      }}
-      onPressOut={() => {
-        Animated.spring(scale, {
-          toValue: 1,
-          useNativeDriver: false,
-          friction: 9,
-          tension: 140,
-        }).start();
-      }}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       accessibilityLabel={module.label}
       style={({ pressed }) => [
         styles.menuItem,
-        pressed && styles.menuItemPressed,
-        {
-          transform: [{ scale }],
-        },
+        pressed && styles.menuItemPressed
       ]}
     >
       <Animated.View
