@@ -14,6 +14,7 @@ import inventoryRoutes from './routes/inventory.routes.js';
 import saleRoutes from './routes/sale.routes.js';
 import purchaseRoutes from './routes/purchase.routes.js';
 import financeRoutes from './routes/finance.routes.js';
+import emailRoutes from './routes/email.routes.js';
 import simpleRoutes from './routes/simple.routes.js';
 import insightsRoutes from './routes/insights.routes.js';
 import partnerRoutes from './routes/partner.routes.js';
@@ -81,6 +82,7 @@ export function createApp() {
   app.use('/api/sales', saleRoutes);
   app.use('/api/purchases', purchaseRoutes);
   app.use('/api/finance', financeRoutes);
+  app.use('/api/email', emailRoutes);
   app.use('/api', simpleRoutes);
   app.use('/api', insightsRoutes);
   app.use(notFoundHandler);
