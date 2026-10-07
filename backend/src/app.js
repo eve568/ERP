@@ -50,6 +50,11 @@ export function createApp() {
     response.set('Expires', '0');
     next();
   });
+  // Render consulta /api/health/ready cada pocos segundos. Estas rutas deben
+  // quedar fuera del rate limiter para que el propio health check no reciba
+  // 429 y provoque reinicios innecesarios del servicio.
+  app.use('/api/health', healthRoutes);
+
   app.use(rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 100,
@@ -72,7 +77,6 @@ export function createApp() {
     });
   });
 
-  app.use('/api/health', healthRoutes);
   app.use('/api/auth', authRoutes);
   app.use('/api/companies', companyRoutes);
   app.use('/api/branches', branchRoutes);
